@@ -1,0 +1,16 @@
+[ENTITY]
+Descriere: Definește o interfață hardware.
+Când se folosește: La începutul oricărei componente hardware.
+Exemplu:
+entity my_component is
+  Port (...);
+end my_component;
+
+[ARCHITECTURE]
+Descriere: Descrie comportamentul componentei.
+Când se folosește: După ENTITY.
+Exemplu:
+architecture Behavioral of my_component is
+begin
+  -- logică aici
+end Behavioral;

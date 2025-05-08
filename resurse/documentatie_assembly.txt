@@ -1,0 +1,11 @@
+[MOV]
+Descriere: Transferă date dintr-o sursă într-o destinație.
+Când se folosește: Pentru a muta date între registre.
+Exemplu:
+MOV AX, BX ; Transferă conținutul din BX în AX
+
+[ADD]
+Descriere: Adună o valoare la registrul destinație.
+Când se folosește: Pentru operații aritmetice simple.
+Exemplu:
+ADD AX, 1 ; AX = AX + 1

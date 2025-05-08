@@ -1,0 +1,15 @@
+[RAM]
+Descriere: Memorie volatilă de citire/scriere.
+Comenzi Assembly: MOV, STORE, LOAD
+Structură:
+MOV SI, 00h
+MOV AX, [SI]
+STORE AX, [SI+1]
+
+[ALU]
+Descriere: Unitate de calcul logic/aritmetic.
+Comenzi Assembly: ADD, SUB
+Structură:
+MOV AX, 5
+MOV BX, 2
+ADD AX, BX

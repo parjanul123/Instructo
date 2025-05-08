@@ -1,0 +1,8 @@
+[cpu]
+Un CPU în VHDL se definește cu entitate, porturi pentru clk/reset și arhitectură simplă. Iată un exemplu:
+
+entity CPU is
+  Port (...);
+end entity;
+
+architecture Behavioral of CPU is ...
