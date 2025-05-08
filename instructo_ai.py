@@ -1,6 +1,9 @@
-from transformers import pipeline
+import openai
+import os
 from web_search import cauta_pe_internet
 
+# === Configurare OpenAI API ===
+openai.api_key = os.getenv("OPENAI_API_KEY")  # Asigură-te că ai setat cheia în mediu
 
 # === Curățare cod (Assembly/VHDL) ===
 def curata_cod(text: str) -> str:
@@ -11,7 +14,6 @@ def curata_cod(text: str) -> str:
             .replace("\r", "")
             .strip()
     )
-
 
 # === Citire documentații text ===
 def incarca_documentatie(fisier):
@@ -26,17 +28,12 @@ def incarca_documentatie(fisier):
             doc[cmd_name] = "\n".join(lines[1:])
     return doc
 
-
 # === Încarcă fișierele de documentație ===
 documentatie_asm = incarca_documentatie("resurse/documentatie_assembly.txt")
 documentatie_vhdl = incarca_documentatie("resurse/documentatie_vhdl.txt")
 functii_hardware = incarca_documentatie("resurse/functii_hardware.txt")
 
-# === Model AI ===
-qa_pipeline = pipeline("text2text-generation", model="google/flan-t5-base")
-
-
-# === Funcția principală pentru răspunsul AI ===
+# === Funcția principală pentru răspunsul AI cu OpenAI GPT-4 ===
 def chat_response(message: str) -> str:
     message = message.strip()
 
@@ -56,14 +53,18 @@ def chat_response(message: str) -> str:
     cautare = intrebare + (" " + cod[:100] if cod else "")
     rezultate = cauta_pe_internet(cautare)
 
-    # Prompt AI prietenos
+    # Prompt AI OpenAI
     prompt = f"""
-Scrie în limba română clar, ca pentru un student.
+Tu ești un asistent tehnic pentru programare VHDL și Assembly.
+- Scrie doar în limba română.
+- Nu menționa surse externe.
+- Răspunde clar și concis, ca pentru un student.
+- Dacă se cere cod, oferă un exemplu corect și complet.
 
 Întrebare:
 {intrebare}
 
-Cod analizat:
+Cod analizat (dacă e):
 {cod}
 
 Informații suplimentare:
@@ -72,5 +73,16 @@ Informații suplimentare:
 Formulează un răspuns natural, cu explicații clare și cod curat.
 """
 
-    result = qa_pipeline(prompt, max_new_tokens=300)[0]["generated_text"]
-    return curata_cod(result)
+    try:
+        response = openai.Completion.create(
+            model="text-davinci-003",  # sau gpt-4 dacă ai acces
+            prompt=prompt,
+            max_tokens=400,
+            temperature=0.7,
+            n=1,
+            stop=None
+        )
+        result = response.choices[0].text.strip()
+        return curata_cod(result)
+    except Exception as e:
+        return f"Eroare în comunicarea cu OpenAI: {str(e)}"
