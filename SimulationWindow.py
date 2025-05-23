@@ -7,8 +7,9 @@ from PyQt6.QtGui import QBrush, QColor, QPainter, QFont, QDrag
 from PyQt6.QtCore import Qt, QMimeData
 from ComponentConfig import InstructoApp
 from Canvas_Views import CanvasView
+from instructo_ai import chat_response  # ✅ Importăm funcția AI
 
-
+# === Componenta grafică pentru fiecare obiect (CPU, RAM, etc.) ===
 class ComponentItem(QGraphicsRectItem):
     def __init__(self, name, label):
         super().__init__(0, 0, 120, 60)
@@ -20,7 +21,7 @@ class ComponentItem(QGraphicsRectItem):
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsSelectable)
 
         self.text = QGraphicsSimpleTextItem(label, self)
-        self.text.setBrush(QBrush(QColor("white")))  # Text alb
+        self.text.setBrush(QBrush(QColor("white")))
         self.text.setFont(QFont("Arial", 10))
         self.text.setPos(10, 65)
 
@@ -49,6 +50,7 @@ class ComponentItem(QGraphicsRectItem):
                 self.text.setText(self.name)
 
 
+# === Fereastra principală de simulare ===
 class SimulationWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -97,6 +99,7 @@ class SimulationWindow(QMainWindow):
 
         central_layout.addWidget(splitter)
 
+    # === Adaugă componente pe scenă ===
     def add_component(self):
         selected_item = self.palette.currentItem().text()
         if selected_item:
@@ -115,6 +118,7 @@ class SimulationWindow(QMainWindow):
             item.setPos(100, 100)
         self.scene.addItem(item)
 
+    # === Drag & Drop pentru componente ===
     def start_drag(self):
         selected_item = self.palette.currentItem()
         if selected_item:
@@ -124,20 +128,25 @@ class SimulationWindow(QMainWindow):
             drag.setMimeData(mime)
             drag.exec()
 
+    # === Funcție pentru chat AI ===
     def handle_chat(self):
         msg = self.chat_input.text().strip()
         if not msg:
             return
-        response = self.fake_ai_response(msg)
-        self.chat_wiring.append(f"<b>Tu:</b> {msg}")
-        self.chat_wiring.append(f"<b>Instructo Wiring:</b> {response}\n")
-        self.chat_input.clear()
 
-    def fake_ai_response(self, message):
-        message = message.lower()
-        if "cpu" in message and "ram" in message:
-            return "Conectează ieșirea CPU la intrarea RAM. Asigură-te că ai un bus."
-        elif "alu" in message:
-            return "ALU are de obicei două intrări: A și B. Ieșirea merge spre RAM sau registru."
-        else:
-            return "Încă învăț. Repetă te rog întrebarea."
+        self.chat_wiring.append(f"<b>Tu:</b> {msg}")
+
+        # ✅ Trimitem întrebarea la OpenAI
+        prompt = f"""
+Tu ești un asistent tehnic pentru simulare și conectare componente (CPU, RAM, ALU, etc).
+Răspunde clar și concis, ca pentru un student.
+
+Întrebare:
+{msg}
+
+Explică cum să conectez componentele sau să le configurez în mod corect.
+"""
+
+        response = chat_response(prompt)  # ✅ Folosim OpenAI
+        self.chat_wiring.append(f"<b>Instructo:</b> {response}\n")
+        self.chat_input.clear()

@@ -36,11 +36,9 @@ functii_hardware = incarca_documentatie("resurse/functii_hardware.txt")
 # === Funcția principală pentru răspunsul AI cu OpenAI GPT-4 ===
 def chat_response(message: str) -> str:
     message = message.strip()
-
     intrebare = message
     cod = ""
 
-    # Separare cod dacă există
     if "cod curent:" in message.lower():
         try:
             parts = message.split("cod curent:")
@@ -49,11 +47,20 @@ def chat_response(message: str) -> str:
         except IndexError:
             cod = ""
 
-    # Caută online pentru întrebarea completă
-    cautare = intrebare + (" " + cod[:100] if cod else "")
-    rezultate = cauta_pe_internet(cautare)
+    # Încercăm să căutăm online, dar cu fallback pe documentație
+    try:
+        rezultate = cauta_pe_internet(intrebare + (" " + cod[:100] if cod else ""))
+    except:
+        rezultate = "⚠️ Nu am putut căuta pe internet. Folosesc doar documentația locală."
 
-    # Prompt AI OpenAI
+    # Verificăm dacă există ceva în documentație
+    documentatie_relevanta = ""
+    if "assembly" in intrebare.lower() or "asm" in intrebare.lower():
+        documentatie_relevanta = documentatie_asm.get(intrebare.lower(), "")
+    elif "vhdl" in intrebare.lower():
+        documentatie_relevanta = documentatie_vhdl.get(intrebare.lower(), "")
+
+    # Prompt AI OpenAI (format pentru noul API)
     prompt = f"""
 Tu ești un asistent tehnic pentru programare VHDL și Assembly.
 - Scrie doar în limba română.
@@ -67,22 +74,26 @@ Tu ești un asistent tehnic pentru programare VHDL și Assembly.
 Cod analizat (dacă e):
 {cod}
 
-Informații suplimentare:
+Informații suplimentare (căutare sau documentație):
 {rezultate}
+
+Documentație locală (dacă există):
+{documentatie_relevanta}
 
 Formulează un răspuns natural, cu explicații clare și cod curat.
 """
 
     try:
-        response = openai.Completion.create(
-            model="text-davinci-003",  # sau gpt-4 dacă ai acces
-            prompt=prompt,
+        response = openai.ChatCompletion.create(
+            model="gpt-4",  # sau "gpt-3.5-turbo" dacă nu ai acces la GPT-4
+            messages=[
+                {"role": "system", "content": "Ești un asistent tehnic pentru VHDL și Assembly."},
+                {"role": "user", "content": prompt}
+            ],
             max_tokens=400,
             temperature=0.7,
-            n=1,
-            stop=None
         )
-        result = response.choices[0].text.strip()
+        result = response.choices[0].message['content'].strip()
         return curata_cod(result)
     except Exception as e:
         return f"Eroare în comunicarea cu OpenAI: {str(e)}"
